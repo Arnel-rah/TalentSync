@@ -1,7 +1,9 @@
-const App = () => {
+import { Button } from "@/components/ui/button"
+
+function App() {
   return (
-    <div className="w-full h-auto">
-      
+    <div className="flex min-h-svh flex-col items-center justify-center">
+      <Button>Click me</Button>
     </div>
   )
 }
