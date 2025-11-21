@@ -1,4 +1,4 @@
-import { Menu, Search } from "lucide-react";
+import { Menu } from "lucide-react";
 
 export default function Navbar() {
   return (
