@@ -1,38 +1,45 @@
-import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { z } from 'zod';
 
-// import authRoutes from './api/auth/auth.routes';
-// import accountRoutes from './api/accounts/accounts.routes';
-// import transactionRoutes from './api/transactions/transactions.routes';
-// import categoryRoutes from './api/categories/categories.routes';
-// import budgetRoutes from './api/budgets/budgets.routes';
-import { errorMiddleware } from './middleware/error.middleware';
-
-const app = express();
-const prisma = new PrismaClient();
-
-app.use(cors());
-app.use(helmet());
-app.use(morgan('dev'));
-app.use(express.json());
-
-// Inject Prisma
-app.use((req, _res, next) => {
-  (req as any).prisma = prisma;
-  next();
+// Auth
+export const registerSchema = z.object({
+  email: z.string().email('Email invalide'),
+  password: z.string().min(6, 'Mot de passe trop court'),
+  role: z.enum(['CLIENT', 'FREELANCE']),
 });
+export type RegisterRequest = z.infer<typeof registerSchema>;
 
-// Routes
-// app.use('/api/auth', authRoutes);
-// app.use('/api/accounts', accountRoutes);
-// app.use('/api/transactions', transactionRoutes);
-// app.use('/api/categories', categoryRoutes);
-// app.use('/api/budgets', budgetRoutes);
-
-// Error handler
-app.use(errorMiddleware);
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
 });
+export type LoginRequest = z.infer<typeof loginSchema>;
+
+// Missions
+export const createMissionSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(10),
+  budget: z.number().min(50),
+  skills: z.array(z.string().min(1)).min(1),
+});
+export type CreateMissionRequest = z.infer<typeof createMissionSchema>;
+
+// Candidatures
+export const applySchema = z.object({
+  proposedPrice: z.number().min(10),
+  coverLetter: z.string().min(10),
+});
+export type ApplyRequest = z.infer<typeof applySchema>;
+
+// Paiements
+export const checkoutSchema = z.object({
+  missionId: z.string().min(1),
+});
+export type CheckoutRequest = z.infer<typeof checkoutSchema>;
+
+// Erreurs communes
+export const errorResponseSchema = z.object({
+  statusCode: z.number(),
+  message: z.string(),
+  error: z.string(),
+});
+export type ErrorResponse = z.infer<typeof errorResponseSchema>;
