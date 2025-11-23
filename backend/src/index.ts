@@ -1,45 +1,48 @@
-import { z } from 'zod';
+import express, { Application } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import dotenv from 'dotenv';
+import { PrismaClient } from '@prisma/client';
 
-// Auth
-export const registerSchema = z.object({
-  email: z.string().email('Email invalide'),
-  password: z.string().min(6, 'Mot de passe trop court'),
-  role: z.enum(['CLIENT', 'FREELANCE']),
-});
-export type RegisterRequest = z.infer<typeof registerSchema>;
+const prisma = new PrismaClient(); 
 
-export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-});
-export type LoginRequest = z.infer<typeof loginSchema>;
+dotenv.config();
 
-// Missions
-export const createMissionSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().min(10),
-  budget: z.number().min(50),
-  skills: z.array(z.string().min(1)).min(1),
-});
-export type CreateMissionRequest = z.infer<typeof createMissionSchema>;
+const app: Application = express();
+const PORT = process.env.PORT || 3000;
 
-// Candidatures
-export const applySchema = z.object({
-  proposedPrice: z.number().min(10),
-  coverLetter: z.string().min(10),
-});
-export type ApplyRequest = z.infer<typeof applySchema>;
+// Middleware de base
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
 
-// Paiements
-export const checkoutSchema = z.object({
-  missionId: z.string().min(1),
+// TODO: Graceful shutdown pour Prisma
+process.on('SIGINT', async () => {
+  await prisma.$disconnect();
+  process.exit(0);
 });
-export type CheckoutRequest = z.infer<typeof checkoutSchema>;
 
-// Erreurs communes
-export const errorResponseSchema = z.object({
-  statusCode: z.number(),
-  message: z.string(),
-  error: z.string(),
+// Routes (identiques)
+import authRoutes from './routes/auth';
+import missionRoutes from './routes/missions';
+import paymentRoutes from './routes/payments';
+import dashboardRoutes from './routes/dashboard';
+
+app.use('/api/auth', authRoutes);
+app.use('/api/missions', missionRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+
+// Health check (teste DB)
+app.get('/api/health', async (req, res) => {
+  try {
+    await prisma.$connect();
+    res.json({ status: 'OK', db: 'Connected' });
+  } catch (error) {
+    res.status(500).json({ status: 'Error', db: 'Disconnected' });
+  }
 });
-export type ErrorResponse = z.infer<typeof errorResponseSchema>;
+
+app.listen(PORT, () => {
+  console.log(`Serveur lancé sur http://localhost:${PORT}`);
+});
