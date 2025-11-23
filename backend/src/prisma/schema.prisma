@@ -1,0 +1,77 @@
+
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(CLIENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  missions  Mission[] @relation("ClientMissions")
+  applications Application[] @relation("FreelanceApplications")
+
+  @@map("users")
+}
+
+model Mission {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  budget      Int
+  skills      String[] // Array de strings pour compétences
+  status      MissionStatus @default(OPEN)
+  clientId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  client      User     @relation("ClientMissions", fields: [clientId], references: [id])
+  applications Application[]
+
+  @@map("missions")
+}
+
+model Application {
+  id            String         @id @default(cuid())
+  proposedPrice Int
+  coverLetter   String
+  status        ApplicationStatus @default(PENDING)
+  missionId     String
+  freelanceId   String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  mission       Mission        @relation(fields: [missionId], references: [id])
+  freelance     User           @relation("FreelanceApplications", fields: [freelanceId], references: [id])
+
+  @@map("applications")
+}
+
+enum Role {
+  CLIENT
+  FREELANCE
+}
+
+enum MissionStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
